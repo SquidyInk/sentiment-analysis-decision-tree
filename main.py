@@ -92,7 +92,8 @@ def main():
         df_processed,
         'cleaned_text',
         'sentiment',
-        test_size=0.2,
+        # Use 0.3 so the tiny demo set keeps at least one sample per class when stratifying
+        test_size=0.3,
         random_state=42
     )
     
