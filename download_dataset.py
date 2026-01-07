@@ -1,125 +1,71 @@
 """
-Kaggle Dataset Downloader for Financial News Sentiment Analysis
-This script automatically downloads the dataset from Kaggle and places it in the correct folder.
+Download Twitter Sentiment140 Dataset
 
-Requirements:
-- Kaggle account
-- Kaggle API credentials (kaggle.json)
+This script downloads the Twitter Sentiment140 dataset from Hugging Face.
+Note: This is a large dataset (approximately 238MB) containing 1.6 million tweets.
 
-Setup Instructions:
-1. Go to https://www.kaggle.com/settings
-2. Scroll to "API" section
-3. Click "Create New API Token"
-4. Save kaggle.json to ~/.kaggle/ (Linux/Mac) or C:\Users\<username>\.kaggle\ (Windows)
-5. Run this script: python download_dataset.py
+The dataset contains tweets labeled with sentiment:
+- 0 = negative
+- 4 = positive (will be converted to 1)
+
+Original dataset: https://huggingface.co/datasets/kazanova/sentiment140
 """
 
+from datasets import load_dataset
 import os
-import sys
-import zipfile
-from pathlib import Path
 
-def check_kaggle_installed():
-    """Check if kaggle package is installed"""
+def download_twitter_sentiment140():
+    """
+    Download the Twitter Sentiment140 dataset from Hugging Face.
+    
+    This is a large dataset (~238MB) with 1.6 million tweets labeled for sentiment analysis.
+    The download may take several minutes depending on your internet connection.
+    """
+    print("Downloading Twitter Sentiment140 dataset...")
+    print("Note: This is a large dataset (238MB) with 1.6 million tweets.")
+    print("Download may take a few minutes...")
+    
+    # Dataset name on Hugging Face
+    dataset_name = "kazanova/sentiment140"
+    
     try:
-        import kaggle
-        return True
-    except ImportError:
-        return False
-
-def install_kaggle():
-    """Install kaggle package"""
-    print("Installing kaggle package...")
-    os.system(f"{sys.executable} -m pip install kaggle")
-
-def download_dataset():
-    """Download the Financial News Sentiment dataset from Kaggle"""
-    try:
-        import kaggle
-        from kaggle.api.kaggle_api_extended import KaggleApi
+        # Load the dataset from Hugging Face
+        dataset = load_dataset(dataset_name)
         
-        print("=" * 60)
-        print("Financial News Sentiment Dataset Downloader")
-        print("=" * 60)
+        print(f"\nDataset '{dataset_name}' downloaded successfully!")
+        print(f"Dataset info: {dataset}")
         
-        # Initialize Kaggle API
-        api = KaggleApi()
-        api.authenticate()
+        # Get the cache directory where the dataset is stored
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "datasets")
+        print(f"\nDataset cached in: {cache_dir}")
         
-        # Create data directory if it doesn't exist
-        data_dir = Path("data")
-        data_dir.mkdir(exist_ok=True)
+        # Check if the original CSV file exists and rename it
+        sentiment140_dir = os.path.join(cache_dir, "kazanova___sentiment140")
+        if os.path.exists(sentiment140_dir):
+            # Search for the original CSV file
+            for root, dirs, files in os.walk(sentiment140_dir):
+                if "training.1600000.processed.noemoticon.csv" in files:
+                    old_path = os.path.join(root, "training.1600000.processed.noemoticon.csv")
+                    new_path = os.path.join(root, "twitter_sentiment140.csv")
+                    
+                    if not os.path.exists(new_path):
+                        os.rename(old_path, new_path)
+                        print(f"\nRenamed dataset file to: twitter_sentiment140.csv")
+                    break
         
-        print("\n✓ Kaggle API authenticated successfully")
-        print(f"✓ Data directory created: {data_dir.absolute()}")
-        
-        # Dataset information
-        dataset_name = "ankurzing/sentiment-analysis-for-financial-news"
-        
-        print(f"\n📥 Downloading dataset: {dataset_name}")
-        print("This may take a few minutes depending on your internet speed...")
-        
-        # Download dataset
-        api.dataset_download_files(
-            dataset_name,
-            path=str(data_dir),
-            unzip=True
-        )
-        
-        print("\n✓ Dataset downloaded successfully!")
-        
-        # List downloaded files
-        print(f"\n📁 Files in {data_dir}:")
-        for file in data_dir.iterdir():
-            if file.is_file():
-                size_mb = file.stat().st_size / (1024 * 1024)
-                print(f"   - {file.name} ({size_mb:.2f} MB)")
-        
-        print("\n" + "=" * 60)
-        print("✅ DOWNLOAD COMPLETE!")
-        print("=" * 60)
-        print("\nYour dataset is ready in the 'data/' folder.")
-        print("You can now run: python main.py")
-        
-        return True
+        return dataset
         
     except Exception as e:
-        print(f"\n❌ Error downloading dataset: {str(e)}")
-        print("\nTroubleshooting:")
-        print("1. Make sure you have a Kaggle account")
-        print("2. Check that kaggle.json is in the correct location:")
-        print("   - Linux/Mac: ~/.kaggle/kaggle.json")
-        print("   - Windows: C:\\Users\\<username>\\.kaggle\\kaggle.json")
-        print("3. Verify your Kaggle API credentials are valid")
-        print("4. Accept the dataset terms at:")
-        print("   https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news")
-        return False
-
-def main():
-    """Main function"""
-    print("\n" + "=" * 60)
-    print("CSC 108 - Sentiment Analysis Dataset Setup")
-    print("=" * 60)
-    
-    # Check if kaggle is installed
-    if not check_kaggle_installed():
-        print("\n⚠ Kaggle package not found.")
-        response = input("Would you like to install it now? (y/n): ")
-        if response.lower() == 'y':
-            install_kaggle()
-        else:
-            print("\n❌ Please install kaggle manually:")
-            print("   pip install kaggle")
-            sys.exit(1)
-    
-    # Download dataset
-    success = download_dataset()
-    
-    if success:
-        print("\n🎉 Setup complete! You're ready to start analyzing sentiment!")
-    else:
-        print("\n❌ Setup failed. Please follow the troubleshooting steps above.")
-        sys.exit(1)
+        print(f"\nError downloading dataset: {e}")
+        print("Please check your internet connection and try again.")
+        return None
 
 if __name__ == "__main__":
-    main()
+    dataset = download_twitter_sentiment140()
+    
+    if dataset:
+        print("\n" + "="*50)
+        print("Twitter Sentiment140 Dataset Download Complete!")
+        print("="*50)
+        print("\nDataset contains 1.6 million tweets for sentiment analysis.")
+        print("You can now proceed with data preprocessing and model training.")
